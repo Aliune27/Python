@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foflet - Jeu Traditionnel Sénégalais</title>
+    <style>
+        /* Variables CSS - Palette Afrique moderne */
+        :root {
+            --or-chaud: #DAA520;
+            --terre-cuite: #CD853F;
+            --vert-profond: #2F4F2F;
+            --bleu-nuit: #191970;
+            --rouge-teranga: #DC143C;
+            --beige-sable: #F5E6D3;
+            --ombre: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Reset et base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, var(--beige-sable) 0%, var(--terre-cuite) 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            /* Motif discret inspiré du wax */
+            background-image: 
+                radial-gradient(circle at 20px 20px, var(--or-chaud) 1px, transparent 1px),
+                radial-gradient(circle at 80px 80px, var(--vert-profond) 1px, transparent 1px);
+            background-size: 100px 100px;
+            background-opacity: 0.1;
+        }
+
+        /* En-tête */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--bleu-nuit);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px var(--ombre);
+            margin-bottom: 10px;
+            animation: pulse-title 3s ease-in-out infinite;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        @keyframes pulse-title {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Container principal */
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px var(--ombre);
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        /* Zone des scores */
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, var(--bleu-nuit), var(--vert-profond));
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px var(--ombre);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scoreboard::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                transparent 30%, 
+                rgba(218, 165, 32, 0.1) 50%, 
+                transparent 70%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .score-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            position: relative;
+            z-index: 2;
+            min-width: 120px;
+        }
+
+        .score-section.current-turn {
+            transform: scale(1.05);
+        }
+
+        .score-section.winner {
+            animation: winner-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes winner-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(218, 165, 32, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(218, 165, 32, 0.8); }
+        }
+
+        .player-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .player-symbol {
+            font-size: 2rem;
+            margin-bottom: 5px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .player1-symbol {
+            color: var(--or-chaud);
+        }
+
+        .player2-symbol {
+            color: var(--rouge-teranga);
+        }
+
+        .score-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--or-chaud);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            animation: score-pulse 0.5s ease-out;
+        }
+
+        @keyframes score-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .score-divider {
+            width: 2px;
+            height: 80px;
+            background: linear-gradient(to bottom, 
+                transparent, 
+                rgba(255, 255, 255, 0.3), 
+                transparent);
+            position: relative;
+        }
+
+        .score-divider::before {
+            content: 'VS';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--or-chaud);
+            color: var(--bleu-nuit);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Compteur de parties */
+        .match-counter {
+            text-align: center;
+            background: rgba(218, 165, 32, 0.1);
+            border: 2px solid var(--or-chaud);
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            color: var(--bleu-nuit);
+        }
+
+        .match-counter .counter-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 2px;
+        }
+
+        .match-counter .counter-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--vert-profond);
+        }
+
+        /* Sélecteur de mode de jeu */
+        .game-mode-selector {
+            background: rgba(47, 79, 47, 0.1);
+            border: 2px solid var(--vert-profond);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .mode-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--bleu-nuit);
+            margin-bottom: 15px;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            background: linear-gradient(135deg, var(--vert-profond), var(--bleu-nuit));
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--or-chaud), var(--terre-cuite));
+            transform: scale(1.05);
+        }
+
+        .difficulty-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+            margin-top: 5px;
+        }
+
+        .difficulty-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .difficulty-dot.active {
+            background: var(--rouge-teranga);
+        }
+
+        /* Indicateur IA en train de réfléchir */
+        .ai-thinking {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(25, 25, 112, 0.9);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            z-index: 999;
+            animation: thinking-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes thinking-pulse {
+            0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .thinking-dots {
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .thinking-dots::after {
+            content: '';
+            animation: thinking-dots 1.5s linear infinite;
+        }
+
+        @keyframes thinking-dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+            100% { content: ''; }
+        }
+
+        /* Zone de statut */
+        .status-area {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .current-player {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--bleu-nuit);
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .current-player.animate {
+            transform: scale(1.1);
+            color: var(--rouge-teranga);
+        }
+
+        .phase-info {
+            font-size: 1rem;
+            color: var(--vert-profond);
+            opacity: 0.8;
+        }
+
+        /* Grille de jeu */
+        .game-board {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 25px;
+            background: var(--beige-sable);
+            border: 3px solid var(--or-chaud);
+            border-radius: 15px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Lignes de la grille */
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .line {
+            position: absolute;
+            background: var(--vert-profond);
+        }
+
+        /* Lignes horizontales et verticales */
+        .line.horizontal {
+            height: 2px;
+            width: 200px;
+            left: 50px;
+        }
+
+        .line.vertical {
+            width: 2px;
+            height: 200px;
+            top: 50px;
+        }
+
+        .line.h1 { top: 150px; }
+        .line.h2 { top: 250px; }
+        .line.h3 { top: 50px; }
+        .line.v3 { left: 50px; }
+        .line.v1 { left: 150px; }
+        .line.v2 { left: 250px; }
+
+        /* Lignes diagonales */
+        .line.diagonal {
+            width: 283px;
+            height: 2px;
+            transform-origin: left center;
+        }
+
+        .line.d1 {
+            top: 50px;
+            left: 50px;
+            transform: rotate(45deg);
+        }
+
+        .line.d2 {
+            top: 250px;
+            left: 50px;
+            transform: rotate(-45deg);
+        }
+
+        /* Intersections */
+        .intersection {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--vert-profond);
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translate(-50%, -50%);
+        }
+
+        .intersection:hover {
+            background: var(--beige-sable);
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 4px 15px var(--ombre);
+        }
+
+        .intersection.occupied {
+            cursor: default;
+        }
+
+        .intersection.selected {
+            animation: pulse-selected 1s ease-in-out infinite;
+            border-color: var(--rouge-teranga);
+        }
+
+        @keyframes pulse-selected {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        /* Positions des intersections */
+        .pos-0 { top: 50px; left: 50px; }
+        .pos-1 { top: 50px; left: 150px; }
+        .pos-2 { top: 50px; left: 250px; }
+        .pos-3 { top: 150px; left: 50px; }
+        .pos-4 { top: 150px; left: 150px; }
+        .pos-5 { top: 150px; left: 250px; }
+        .pos-6 { top: 250px; left: 50px; }
+        .pos-7 { top: 250px; left: 150px; }
+        .pos-8 { top: 250px; left: 250px; }
+
+        /* Pions */
+        .piece {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 2px 8px var(--ombre);
+            animation: piece-appear 0.5s ease-out;
+        }
+
+        @keyframes piece-appear {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .piece.player1 {
+            background: radial-gradient(circle, var(--or-chaud), #B8860B);
+            border: 2px solid #B8860B;
+        }
+
+        .piece.player2 {
+            background: linear-gradient(135deg, var(--rouge-teranga), #B22222);
+            border-radius: 15%;
+            border: 2px solid #B22222;
+        }
+
+        .piece.moving {
+            animation: piece-move 0.6s ease-in-out;
+        }
+
+        @keyframes piece-move {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3) rotate(10deg); }
+        }
+
+        /* Styles pour le drag and drop */
+        .piece.draggable {
+            cursor: grab;
+        }
+
+        .piece.dragging {
+            cursor: grabbing;
+            opacity: 0.8;
+            transform: scale(1.1);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .intersection.drag-over {
+            background: rgba(218, 165, 32, 0.3);
+            border-color: var(--or-chaud);
+            transform: translate(-50%, -50%) scale(1.15);
+        }
+
+        .intersection.drag-valid {
+            background: rgba(34, 139, 34, 0.3);
+            border-color: #228B22;
+        }
+
+        .intersection.drag-invalid {
+            background: rgba(220, 20, 60, 0.3);
+            border-color: var(--rouge-teranga);
+        }
+
+        /* Lignes de victoire */
+        .winning-line {
+            position: absolute;
+            height: 4px;
+            background: var(--rouge-teranga);
+            animation: victory-line 1s ease-in-out;
+            border-radius: 2px;
+            box-shadow: 0 0 10px var(--rouge-teranga);
+        }
+
+        @keyframes victory-line {
+            0% { width: 0; opacity: 0; }
+            100% { width: 100%; opacity: 1; }
+        }
+
+        /* Contrôles */
+        .controls {
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--or-chaud), var(--terre-cuite));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--ombre);
+            font-family: inherit;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--ombre);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Message de victoire */
+        .victory-message {
+            position: fixed;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(25, 25, 112, 0.95);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 20px;
+            font-size: 1.5rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            animation: victory-appear 0.5s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes victory-appear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .header h1 { font-size: 2rem; }
+            .header p { font-size: 1rem; }
+            .game-container { padding: 20px; max-width: 95%; }
+            .game-board { width: 250px; height: 250px; }
+            .intersection { width: 35px; height: 35px; }
+            .piece { width: 25px; height: 25px; }
+            
+            /* Scores responsive */
+            .scoreboard { 
+                padding: 15px; 
+                flex-direction: column;
+                gap: 15px;
+            }
+            .score-section { min-width: auto; }
+            .score-divider { 
+                width: 80px; 
+                height: 2px;
+                transform: rotate(90deg);
+            }
+            .score-divider::before {
+                transform: translate(-50%, -50%) rotate(-90deg);
+            }
+            
+            .line.horizontal { width: 167px; left: 42px; }
+            .line.vertical { height: 167px; top: 42px; }
+            .line.v1 { left: 125px; }
+            .line.v2 { left: 208px; }
+            .line.h1 { top: 125px; }
+            .line.h2 { top: 208px; }
+            .line.diagonal { width: 236px; }
+            .line.d1 { top: 42px; left: 42px; }
+            .line.d2 { top: 208px; left: 42px; }
+            
+            .pos-0 { top: 42px; left: 42px; }
+            .pos-1 { top: 42px; left: 125px; }
+            .pos-2 { top: 42px; left: 208px; }
+            .pos-3 { top: 125px; left: 42px; }
+            .pos-4 { top: 125px; left: 125px; }
+            .pos-5 { top: 125px; left: 208px; }
+            .pos-6 { top: 208px; left: 42px; }
+            .pos-7 { top: 208px; left: 125px; }
+            .pos-8 { top: 208px; left: 208px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- En-tête -->
+    <header class="header">
+        <h1>🎯 Foflet</h1>
+        <p>Jeu traditionnel sénégalais</p>
+    </header>
+
+    <!-- Container principal du jeu -->
+    <div class="game-container">
+        <!-- Tableau des scores -->
+        <div class="scoreboard" id="scoreboard">
+            <div class="score-section" id="player1Score">
+                <div class="player-name">Joueur 1</div>
+                <div class="player-symbol player1-symbol">●</div>
+                <div class="score-value">0</div>
+            </div>
+            
+            <div class="score-divider"></div>
+            
+            <div class="score-section" id="player2Score">
+                <div class="player-name">Joueur 2</div>
+                <div class="player-symbol player2-symbol">■</div>
+                <div class="score-value">0</div>
+            </div>
+        </div>
+
+        <!-- Compteur de parties -->
+        <div class="match-counter">
+            <div class="counter-label">Partie n°</div>
+            <div class="counter-value" id="matchCounter">1</div>
+        </div>
+
+        <!-- Sélecteur de mode de jeu -->
+        <div class="game-mode-selector" id="gameModeSelector" style="display: none;">
+            <div class="mode-title">Sélectionnez le mode de jeu :</div>
+            <div class="mode-buttons">
+                <button class="mode-btn active" onclick="setGameMode('pvp')">Joueur vs Joueur</button>
+                <button class="mode-btn" onclick="setGameMode('easy')">
+                    IA Facile
+                    <div class="difficulty-indicator">
+                        <div class="difficulty-dot active"></div>
+                        <div class="difficulty-dot"></div>
+                        <div class="difficulty-dot"></div>
+                    </div>
+                </button>
+                <button class="mode-btn" onclick="setGameMode('medium')">
+                    IA Difficile
+                    <div class="difficulty-indicator">
+                        <div class="difficulty-dot active"></div>
+                        <div class="difficulty-dot active"></div>
+                        <div class="difficulty-dot"></div>
+                    </div>
+                </button>
+                <button class="mode-btn" onclick="setGameMode('hard')">
+                    IA Expert
+                    <div class="difficulty-indicator">
+                        <div class="difficulty-dot active"></div>
+                        <div class="difficulty-dot active"></div>
+                        <div class="difficulty-dot active"></div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Zone de statut -->
+        <div class="status-area">
+            <div class="current-player" id="currentPlayerDisplay">
+                Tour du Joueur 1 (●)
+            </div>
+            <div class="phase-info" id="phaseInfo">
+                Phase 1 : Placez vos pions
+            </div>
+        </div>
+
+        <!-- Plateau de jeu -->
+        <div class="game-board" id="gameBoard">
+            <!-- Lignes de la grille -->
+            <div class="grid-lines">
+                <div class="line horizontal h1"></div>
+                <div class="line horizontal h2"></div>
+                <div class="line horizontal h3"></div>
+                <div class="line vertical v1"></div>
+                <div class="line vertical v2"></div>
+                <div class="line vertical v3"></div>
+                <div class="line diagonal d1"></div>
+                <div class="line diagonal d2"></div>
+            </div>
+
+            <!-- Intersections (générées dynamiquement) -->
+        </div>
+
+        <!-- Contrôles -->
+        <div class="controls">
+            <button class="btn" onclick="nextGame()" style="background: linear-gradient(135deg, var(--or-chaud), var(--terre-cuite));">
+                ⏭️ Partie suivante
+            </button>
+            <button class="btn" onclick="resetAllScores()" style="background: linear-gradient(135deg, var(--rouge-teranga), #B22222);">
+                🔄 Reset complet
+            </button>
+            <button class="btn" onclick="toggleGameModeSelector()" style="background: linear-gradient(135deg, var(--bleu-nuit), var(--vert-profond));">
+                🕹️ Mode de jeu
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ====== VARIABLES GLOBALES ======
+        
+        // État du plateau (9 intersections, null = vide, 1 = joueur 1, 2 = joueur 2)
+        let board = Array(9).fill(null);
+        
+        // Joueur actuel (1 ou 2)
+        let currentPlayer = 1;
+        
+        // Phase de jeu (1 = placement, 2 = déplacement)
+        let phase = 1;
+        
+        // Compteur de pions placés
+        let piecesPlaced = 0;
+        
+        // Position sélectionnée en phase 2 (-1 = aucune)
+        let selectedPosition = -1;
+        
+        // Variables pour le drag and drop
+        let draggedPiece = null;
+        let draggedFromPosition = -1;
+        
+        // Scores et compteurs
+        let player1Score = 0;
+        let player2Score = 0;
+        let matchNumber = 1;
+        
+        // Mode de jeu et IA
+        let gameMode = 'pvp'; // 'pvp', 'easy', 'medium', 'hard'
+        let isAIThinking = false;
+        
+        // Fin de partie
+        let gameEnded = false;
+        
+        // ====== DÉFINITIONS DES LIGNES GAGNANTES ======
+        
+        // Toutes les combinaisons possibles pour gagner (indices des intersections)
+        const winningLines = [
+            [0, 1, 2], // Ligne horizontale haut
+            [3, 4, 5], // Ligne horizontale milieu  
+            [6, 7, 8], // Ligne horizontale bas
+            [0, 3, 6], // Ligne verticale gauche
+            [1, 4, 7], // Ligne verticale milieu
+            [2, 5, 8], // Ligne verticale droite
+            [0, 4, 8], // Diagonale principale
+            [2, 4, 6]  // Diagonale secondaire
+        ];
+        
+        // ====== ADJACENCES POUR LA PHASE 2 ======
+        
+        // Définit quelles intersections sont adjacentes à chaque position
+        const adjacencies = {
+            0: [1, 3, 4],
+            1: [0, 2, 4],
+            2: [1, 4, 5],
+            3: [0, 4, 6],
+            4: [0, 1, 2, 3, 5, 6, 7, 8], // Centre connecté à tout
+            5: [2, 4, 8],
+            6: [3, 4, 7],
+            7: [4, 6, 8],
+            8: [4, 5, 7]
+        };
+        
+        // ====== INITIALISATION ======
+        
+        /**
+         * Initialise le jeu au démarrage
+         */
+        function initGame() {
+            createIntersections();
+            renderBoard();
+            updateDisplay();
+        }
+
+        /**
+         * Bascule l'affichage du sélecteur de mode de jeu
+         */
+        function toggleGameModeSelector() {
+            const selector = document.getElementById('gameModeSelector');
+            selector.style.display = selector.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        /**
+         * Crée les intersections sur le plateau
+         */
+        function createIntersections() {
+            const gameBoard = document.getElementById('gameBoard');
+            
+            // Crée 9 intersections
+            for (let i = 0; i < 9; i++) {
+                const intersection = document.createElement('div');
+                intersection.className = `intersection pos-${i}`;
+                intersection.setAttribute('data-position', i);
+                intersection.setAttribute('role', 'button');
+                intersection.setAttribute('aria-label', `Intersection ${i + 1}`);
+                
+                // Gestionnaire de clic
+                intersection.addEventListener('click', handleClick);
+                
+                gameBoard.appendChild(intersection);
+            }
+        }
+        
+        // ====== RENDU VISUEL ======
+        
+        /**
+         * Met à jour l'affichage du plateau
+         */
+        function renderBoard() {
+            const intersections = document.querySelectorAll('.intersection');
+            
+            intersections.forEach((intersection, index) => {
+                const position = parseInt(intersection.getAttribute('data-position'));
+                
+                // Nettoie l'intersection
+                intersection.innerHTML = '';
+                intersection.className = `intersection pos-${position}`;
+                
+                // Ajoute le pion si présent
+                if (board[position] !== null) {
+                    const piece = document.createElement('div');
+                    piece.className = `piece player${board[position]}`;
+                    
+                    // Ajoute le drag and drop en phase 2 pour les pions du joueur actuel
+                    if (phase === 2 && board[position] === currentPlayer && !gameEnded && !isAIThinking) {
+                        // En mode IA, empêche le drag des pions de l'IA
+                        if (gameMode === 'pvp' || currentPlayer === 1) {
+                            piece.classList.add('draggable');
+                            piece.draggable = true;
+                            piece.setAttribute('data-position', position);
+                            
+                            // Gestionnaires d'événements pour le drag
+                            piece.addEventListener('dragstart', handleDragStart);
+                            piece.addEventListener('dragend', handleDragEnd);
+                        }
+                    }
+                    
+                    intersection.appendChild(piece);
+                    intersection.classList.add('occupied');
+                }
+                
+                // Marque la position sélectionnée en phase 2
+                if (position === selectedPosition) {
+                    intersection.classList.add('selected');
+                }
+            });
+            
+            // Ajoute les gestionnaires de drop aux intersections vides en phase 2
+            if (phase === 2 && !gameEnded && !isAIThinking) {
+                intersections.forEach((intersection, index) => {
+                    const position = parseInt(intersection.getAttribute('data-position'));
+                    if (board[position] === null) {
+                        intersection.addEventListener('dragover', handleDragOver);
+                        intersection.addEventListener('drop', handleDrop);
+                        intersection.addEventListener('dragenter', handleDragEnter);
+                        intersection.addEventListener('dragleave', handleDragLeave);
+                    }
+                });
+            }
+        }
+        
+        /**
+         * Met à jour l'affichage du statut
+         */
+        function updateDisplay() {
+            const playerDisplay = document.getElementById('currentPlayerDisplay');
+            const phaseInfo = document.getElementById('phaseInfo');
+            
+            if (gameEnded) return;
+            
+            // Affichage du joueur actuel
+            const symbol = currentPlayer === 1 ? '●' : '■';
+            let playerName = `Joueur ${currentPlayer}`;
+            
+            // Adapte le nom selon le mode de jeu
+            if (gameMode !== 'pvp' && currentPlayer === 2) {
+                const aiNames = {
+                    'easy': 'IA Facile',
+                    'medium': 'IA Difficile',
+                    'hard': 'IA Expert'
+                };
+                playerName = aiNames[gameMode];
+            }
+            
+            playerDisplay.textContent = `Tour de ${playerName} (${symbol})`;
+            
+            // Animation du changement de joueur
+            playerDisplay.classList.add('animate');
+            setTimeout(() => playerDisplay.classList.remove('animate'), 300);
+            
+            // Affichage de la phase
+            if (phase === 1) {
+                phaseInfo.textContent = `Phase 1 : Placez vos pions (${piecesPlaced}/6)`;
+            } else {
+                if (gameMode !== 'pvp' && currentPlayer === 2 && isAIThinking) {
+                    phaseInfo.textContent = 'Phase 2 : L\'IA réfléchit...';
+                } else {
+                    phaseInfo.textContent = 'Phase 2 : Cliquez ou glissez-déposez un pion pour le déplacer';
+                }
+            }
+            
+            // Met à jour l'indicateur de tour dans le scoreboard
+            updateScoreboardDisplay();
+        }
+
+        /**
+         * Met à jour l'affichage du tableau des scores
+         */
+        function updateScoreboardDisplay() {
+            const player1Section = document.getElementById('player1Score');
+            const player2Section = document.getElementById('player2Score');
+            
+            // Supprime les classes précédentes
+            player1Section.classList.remove('current-turn', 'winner');
+            player2Section.classList.remove('current-turn', 'winner');
+            
+            // Ajoute la classe pour le joueur actuel
+            if (!gameEnded) {
+                if (currentPlayer === 1) {
+                    player1Section.classList.add('current-turn');
+                } else {
+                    player2Section.classList.add('current-turn');
+                }
+            }
+        }
+
+        /**
+         * Met à jour les scores
+         */
+        function updateScores() {
+            const player1ScoreElement = document.querySelector('#player1Score .score-value');
+            const player2ScoreElement = document.querySelector('#player2Score .score-value');
+            const matchCounterElement = document.getElementById('matchCounter');
+            
+            player1ScoreElement.textContent = player1Score;
+            player2ScoreElement.textContent = player2Score;
+            matchCounterElement.textContent = matchNumber;
+            
+            // Animation des scores
+            player1ScoreElement.style.animation = 'none';
+            player2ScoreElement.style.animation = 'none';
+            
+            setTimeout(() => {
+                if (currentPlayer === 1) {
+                    player1ScoreElement.style.animation = 'score-pulse 0.5s ease-out';
+                } else {
+                    player2ScoreElement.style.animation = 'score-pulse 0.5s ease-out';
+                }
+            }, 100);
+        }
+        
+        // ====== GESTION DES MODES DE JEU ======
+        
+        /**
+         * Change le mode de jeu
+         * @param {string} mode - Mode sélectionné ('pvp', 'easy', 'medium', 'hard')
+         */
+        function setGameMode(mode) {
+            gameMode = mode;
+            
+            // Met à jour l'interface
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Met à jour les noms dans le scoreboard
+            const player2Name = document.querySelector('#player2Score .player-name');
+            if (mode === 'pvp') {
+                player2Name.textContent = 'Joueur 2';
+            } else {
+                const difficultyNames = {
+                    'easy': 'IA Facile',
+                    'medium': 'IA Difficile', 
+                    'hard': 'IA Expert'
+                };
+                player2Name.textContent = difficultyNames[mode];
+            }
+            
+            // Cache le sélecteur
+            toggleGameModeSelector();
+            
+            // Redémarre la partie
+            resetAllScores();
+        }
+        
+        // ====== INTELLIGENCE ARTIFICIELLE ======
+        
+        /**
+         * Fait jouer l'IA selon le niveau de difficulté
+         */
+        function makeAIMove() {
+            if (gameEnded || currentPlayer !== 2 || gameMode === 'pvp') return;
+            
+            showAIThinking();
+            
+            // Délai pour simuler la réflexion
+            const thinkingTime = gameMode === 'easy' ? 500 : gameMode === 'medium' ? 1000 : 1500;
+            
+            setTimeout(() => {
+                let move;
+                
+                switch (gameMode) {
+                    case 'easy':
+                        move = getEasyAIMove();
+                        break;
+                    case 'medium':
+                        move = getMediumAIMove();
+                        break;
+                    case 'hard':
+                        move = getHardAIMove();
+                        break;
+                }
+                
+                if (move) {
+                    if (phase === 1) {
+                        // Placement
+                        handlePlacement(move.position);
+                    } else {
+                        // Déplacement
+                        movePiece(move.from, move.to);
+                    }
+                }
+                
+                hideAIThinking();
+            }, thinkingTime);
+        }
+        
+        /**
+         * IA Facile - Mouvements aléatoires avec un peu de stratégie
+         */
+        function getEasyAIMove() {
+            if (phase === 1) {
+                // Phase 1: placement avec un peu de stratégie
+                const availablePositions = [];
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        availablePositions.push(i);
+                    }
+                }
+                
+                // 30% du temps, essaie de bloquer l'adversaire
+                if (Math.random() < 0.3) {
+                    const blockMove = findWinningMove(1);
+                    if (blockMove) return blockMove;
+                }
+                
+                if (availablePositions.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * availablePositions.length);
+                    return { position: availablePositions[randomIndex] };
+                }
+            } else {
+                // Phase 2: déplacement aléatoire
+                const myPieces = [];
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === 2) {
+                        myPieces.push(i);
+                    }
+                }
+                
+                // Essaie chaque pion jusqu'à trouver un mouvement valide
+                for (let piece of myPieces) {
+                    const adjacentPositions = adjacencies[piece].filter(pos => board[pos] === null);
+                    if (adjacentPositions.length > 0) {
+                        const randomMove = adjacentPositions[Math.floor(Math.random() * adjacentPositions.length)];
+                        return { from: piece, to: randomMove };
+                    }
+                }
+            }
+            return null;
+        }
+        
+        /**
+         * IA Moyenne - Essaie de gagner, bloque souvent l'adversaire
+         */
+        function getMediumAIMove() {
+            // 1. Essaie de gagner
+            const winMove = findWinningMove(2);
+            if (winMove) return winMove;
+            
+            // 2. Bloque l'adversaire (70% du temps)
+            if (Math.random() < 0.7) {
+                const blockMove = findWinningMove(1);
+                if (blockMove) return blockMove;
+            }
+            
+            // 3. Mouvement stratégique ou aléatoire
+            return getStrategicMove() || getEasyAIMove();
+        }
+        
+        /**
+         * IA Difficile - Joue de manière optimale
+         */
+        function getHardAIMove() {
+            // 1. Essaie de gagner
+            const winMove = findWinningMove(2);
+            if (winMove) return winMove;
+            
+            // 2. Bloque l'adversaire
+            const blockMove = findWinningMove(1);
+            if (blockMove) return blockMove;
+            
+            // 3. Mouvement stratégique avancé
+            return getAdvancedStrategicMove() || getStrategicMove() || getEasyAIMove();
+        }
+        
+        /**
+         * Trouve un mouvement gagnant pour un joueur
+         * @param {number} player - Joueur (1 ou 2)
+         */
+        function findWinningMove(player) {
+            if (phase === 1) {
+                // Phase 1: teste chaque position libre
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        board[i] = player;
+                        if (checkWinForPlayer(player)) {
+                            board[i] = null;
+                            return { position: i };
+                        }
+                        board[i] = null;
+                    }
+                }
+            } else {
+                // Phase 2: teste chaque déplacement possible
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === player) {
+                        for (let adjacent of adjacencies[i]) {
+                            if (board[adjacent] === null) {
+                                // Simule le mouvement
+                                board[adjacent] = player;
+                                board[i] = null;
+                            
+                                if (checkWinForPlayer(player)) {
+                                    // Annule la simulation
+                                    board[i] = player;
+                                    board[adjacent] = null;
+                                    return { from: i, to: adjacent };
+                                }
+                                
+                                // Annule la simulation
+                                board[i] = player;
+                                board[adjacent] = null;
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+        
+        /**
+         * Mouvement stratégique de base
+         */
+        function getStrategicMove() {
+            if (phase === 1) {
+                // Priorité au centre, puis aux coins
+                const priorities = [4, 0, 2, 6, 8, 1, 3, 5, 7];
+                for (let position of priorities) {
+                    if (board[position] === null) {
+                        return { position };
+                    }
+                }
+            } else {
+                // Préfère déplacer vers le centre ou créer des opportunités
+                const myPieces = [];
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === 2) myPieces.push(i);
+                }
+                
+                for (let piece of myPieces) {
+                    const moves = adjacencies[piece].filter(pos => board[pos] === null);
+                    if (moves.length > 0) {
+                        // Priorité vers le centre
+                        if (moves.includes(4)) {
+                            return { from: piece, to: 4 };
+                        }
+                        return { from: piece, to: moves[0] };
+                    }
+                }
+            }
+            return null;
+        }
+        
+        /**
+         * Mouvement stratégique avancé pour l'IA difficile
+         */
+        function getAdvancedStrategicMove() {
+            // Logique plus sophistiquée : évalue les positions selon leur potentiel
+            if (phase === 1) {
+                let bestPosition = -1;
+                let bestScore = -1;
+                
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        const score = evaluatePosition(i, 2);
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestPosition = i;
+                        }
+                    }
+                }
+                
+                if (bestPosition !== -1) {
+                    return { position: bestPosition };
+                }
+            } else {
+                // Phase 2: évalue chaque mouvement possible
+                let bestMove = null;
+                let bestScore = -1;
+                
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === 2) {
+                        for (let adjacent of adjacencies[i]) {
+                            if (board[adjacent] === null) {
+                                const score = evaluatePosition(adjacent, 2);
+                                if (score > bestScore) {
+                                    bestScore = score;
+                                    bestMove = { from: i, to: adjacent };
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                return bestMove;
+            }
+            return null;
+        }
+        
+        /**
+         * Évalue une position selon son potentiel stratégique
+         */
+        function evaluatePosition(position, player) {
+            let score = 0;
+            
+            // Points pour chaque ligne dont fait partie cette position
+            winningLines.forEach(line => {
+                if (line.includes(position)) {
+                    const otherPositions = line.filter(pos => pos !== position);
+                    const friendlyCount = otherPositions.filter(pos => board[pos] === player).length;
+                    const enemyCount = otherPositions.filter(pos => board[pos] === (player === 1 ? 2 : 1)).length;
+                    
+                    if (enemyCount === 0) {
+                        score += friendlyCount === 0 ? 1 : friendlyCount * 3;
+                    }
+                }
+            });
+            
+            // Bonus pour le centre
+            if (position === 4) score += 2;
+            
+            return score;
+        }
+        
+        /**
+         * Vérifie si un joueur spécifique a gagné
+         */
+        function checkWinForPlayer(player) {
+            for (let line of winningLines) {
+                const [a, b, c] = line;
+                if (board[a] === player && board[b] === player && board[c] === player) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        /**
+         * Affiche l'indicateur de réflexion de l'IA
+         */
+        function showAIThinking() {
+            if (isAIThinking) return;
+            
+            isAIThinking = true;
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'ai-thinking';
+            thinkingDiv.id = 'aiThinking';
+            thinkingDiv.innerHTML = '🤖 IA réfléchit<span class="thinking-dots"></span>';
+            
+            document.body.appendChild(thinkingDiv);
+            updateDisplay();
+        }
+        
+        /**
+         * Cache l'indicateur de réflexion de l'IA
+         */
+        function hideAIThinking() {
+            const thinkingDiv = document.getElementById('aiThinking');
+            if (thinkingDiv) {
+                document.body.removeChild(thinkingDiv);
+            }
+            isAIThinking = false;
+            updateDisplay();
+        }
+        
+        // ====== GESTION DU DRAG AND DROP ======
+        
+        /**
+         * Gère le début du drag d'un pion
+         * @param {DragEvent} event - Événement drag start
+         */
+        function handleDragStart(event) {
+            draggedPiece = event.target;
+            draggedFromPosition = parseInt(event.target.getAttribute('data-position'));
+            
+            // Style visuel pendant le drag
+            draggedPiece.classList.add('dragging');
+            
+            // Définit les données du drag
+            event.dataTransfer.setData('text/plain', draggedFromPosition);
+            event.dataTransfer.effectAllowed = 'move';
+            
+            // Masque les autres contrôles de sélection
+            selectedPosition = -1;
+            renderBoard();
+        }
+        
+        /**
+         * Gère la fin du drag
+         * @param {DragEvent} event - Événement drag end
+         */
+        function handleDragEnd(event) {
+            if (draggedPiece) {
+                draggedPiece.classList.remove('dragging');
+            }
+            
+            // Nettoie les états visuels
+            document.querySelectorAll('.intersection').forEach(intersection => {
+                intersection.classList.remove('drag-over', 'drag-valid', 'drag-invalid');
+            });
+            
+            draggedPiece = null;
+            draggedFromPosition = -1;
+        }
+        
+        /**
+         * Gère le survol pendant le drag
+         * @param {DragEvent} event - Événement drag over
+         */
+        function handleDragOver(event) {
+            event.preventDefault(); // Nécessaire pour permettre le drop
+            event.dataTransfer.dropEffect = 'move';
+        }
+        
+        /**
+         * Gère l'entrée dans une zone de drop
+         * @param {DragEvent} event - Événement drag enter
+         */
+        function handleDragEnter(event) {
+            event.preventDefault();
+            const position = parseInt(event.currentTarget.getAttribute('data-position'));
+            
+            // Vérifie si le mouvement est valide
+            if (draggedFromPosition !== -1 && adjacencies[draggedFromPosition].includes(position)) {
+                event.currentTarget.classList.add('drag-over', 'drag-valid');
+            } else {
+                event.currentTarget.classList.add('drag-over', 'drag-invalid');
+            }
+        }
+        
+        /**
+         * Gère la sortie d'une zone de drop
+         * @param {DragEvent} event - Événement drag leave
+         */
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('drag-over', 'drag-valid', 'drag-invalid');
+        }
+        
+        /**
+         * Gère le drop d'un pion
+         * @param {DragEvent} event - Événement drop
+         */
+        function handleDrop(event) {
+            event.preventDefault();
+            const toPosition = parseInt(event.currentTarget.getAttribute('data-position'));
+            const fromPosition = parseInt(event.dataTransfer.getData('text/plain'));
+            
+            // Vérifie que le mouvement est valide
+            if (board[toPosition] === null && 
+                adjacencies[fromPosition].includes(toPosition) && 
+                board[fromPosition] === currentPlayer) {
+                
+                // Effectue le déplacement
+                movePiece(fromPosition, toPosition);
+            }
+            
+            // Nettoie les états visuels
+            event.currentTarget.classList.remove('drag-over', 'drag-valid', 'drag-invalid');
+        }
+        
+        // ====== GESTION DES CLICS ======
+        
+        /**
+         * Gère les clics sur les intersections
+         * @param {Event} event - Événement de clic
+         */
+        function handleClick(event) {
+            if (gameEnded || isAIThinking) return;
+            
+            // En mode IA, bloque les clics si c'est le tour de l'IA
+            if (gameMode !== 'pvp' && currentPlayer === 2) return;
+            
+            const position = parseInt(event.currentTarget.getAttribute('data-position'));
+            
+            if (phase === 1) {
+                handlePlacement(position);
+            } else {
+                handleMovement(position);
+            }
+        }
+        
+        /**
+         * Gère le placement des pions en phase 1
+         * @param {number} position - Position cliquée
+         */
+        function handlePlacement(position) {
+            // Vérifie que la position est libre
+            if (board[position] !== null) return;
+            
+            // Place le pion
+            board[position] = currentPlayer;
+            piecesPlaced++;
+            
+            // Met à jour l'affichage
+            renderBoard();
+            
+            // Vérifie la victoire
+            if (checkWin()) {
+                showVictory();
+                return;
+            }
+            
+            // Passe au joueur suivant
+            switchPlayer();
+            
+            // Si tous les pions sont placés, passe à la phase 2
+            if (piecesPlaced === 6) {
+                startMovementPhase();
+            }
+            
+            updateDisplay();
+            
+            // Fait jouer l'IA si c'est son tour
+            if (gameMode !== 'pvp' && currentPlayer === 2) {
+                setTimeout(() => makeAIMove(), 300);
+            }
+        }
+        
+        /**
+         * Gère le déplacement des pions en phase 2
+         * @param {number} position - Position cliquée
+         */
+        function handleMovement(position) {
+            if (selectedPosition === -1) {
+                // Sélection d'un pion à déplacer
+                if (board[position] === currentPlayer) {
+                    selectedPosition = position;
+                    renderBoard();
+                }
+            } else {
+                if (position === selectedPosition) {
+                    // Désélection
+                    selectedPosition = -1;
+                    renderBoard();
+                } else if (board[position] === null && adjacencies[selectedPosition].includes(position)) {
+                    // Déplacement valide
+                    movePiece(selectedPosition, position);
+                } else if (board[position] === currentPlayer) {
+                    // Sélection d'un autre pion du même joueur
+                    selectedPosition = position;
+                    renderBoard();
+                }
+            }
+        }
+        
+        /**
+         * Déplace un pion d'une position à une autre
+         * @param {number} from - Position d'origine
+         * @param {number} to - Position de destination
+         */
+        function movePiece(from, to) {
+            // Effectue le déplacement
+            board[to] = board[from];
+            board[from] = null;
+            selectedPosition = -1;
+            
+            // Met à jour l'affichage
+            renderBoard();
+            
+            // Animation du déplacement
+            setTimeout(() => {
+                const piece = document.querySelector(`.pos-${to} .piece`);
+                if (piece) {
+                    piece.classList.add('moving');
+                    setTimeout(() => piece.classList.remove('moving'), 600);
+                }
+            }, 50);
+            
+            // Vérifie la victoire
+            if (checkWin()) {
+                showVictory();
+                return;
+            }
+            
+            // Passe au joueur suivant
+            switchPlayer();
+            updateDisplay();
+            
+            // Fait jouer l'IA si c'est son tour
+            if (gameMode !== 'pvp' && currentPlayer === 2) {
+                setTimeout(() => makeAIMove(), 300);
+            }
+        }
+        
+        // ====== LOGIQUE DE JEU ======
+        
+        /**
+         * Passe au joueur suivant
+         */
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+        }
+        
+        /**
+         * Démarre la phase de déplacement
+         */
+        function startMovementPhase() {
+            phase = 2;
+            selectedPosition = -1;
+            
+            // Si c'est le tour de l'IA, la fait jouer
+            if (gameMode !== 'pvp' && currentPlayer === 2) {
+                setTimeout(() => makeAIMove(), 500);
+            }
+        }
+        
+        /**
+         * Vérifie s'il y a une ligne gagnante
+         * @returns {boolean} - True si victoire
+         */
+        function checkWin() {
+            for (let line of winningLines) {
+                const [a, b, c] = line;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    highlightWinningLine(line);
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        /**
+         * Met en évidence la ligne gagnante
+         * @param {Array} line - Indices de la ligne gagnante
+         */
+        function highlightWinningLine(line) {
+            const intersections = document.querySelectorAll('.intersection');
+            
+            line.forEach(pos => {
+                intersections[pos].style.background = 'rgba(220, 20, 60, 0.3)';
+                intersections[pos].style.border = '3px solid var(--rouge-teranga)';
+            });
+        }
+        
+        /**
+         * Affiche le message de victoire
+         */
+        function showVictory() {
+            gameEnded = true;
+            
+            // Met à jour le score
+            if (currentPlayer === 1) {
+                player1Score++;
+            } else {
+                player2Score++;
+            }
+            
+            // Animation du gagnant dans le scoreboard
+            const winnerSection = currentPlayer === 1 ? 
+                document.getElementById('player1Score') : 
+                document.getElementById('player2Score');
+            winnerSection.classList.add('winner');
+            
+            // Met à jour l'affichage des scores
+            updateScores();
+            
+            // Nom du gagnant selon le mode
+            let winnerName = `Joueur ${currentPlayer}`;
+            if (gameMode !== 'pvp' && currentPlayer === 2) {
+                const aiNames = {
+                    'easy': 'IA Facile',
+                    'medium': 'IA Difficile',
+                    'hard': 'IA Expert'
+                };
+                winnerName = aiNames[gameMode];
+            }
+            
+            // Crée et affiche le message
+            const victoryMessage = document.createElement('div');
+            victoryMessage.className = 'victory-message';
+            victoryMessage.innerHTML = `
+                <h2>🎉 Victoire ! 🎉</h2>
+                <p>${winnerName} a gagné la partie n°${matchNumber} !</p>
+                <p style="margin-top: 15px; font-size: 1.2rem;">
+                    Score : <span style="color: var(--or-chaud);">${player1Score}</span> - 
+                    <span style="color: var(--rouge-teranga);">${player2Score}</span>
+                </p>
+                <br>
+                <button class="btn" onclick="nextGame()">Partie suivante</button>
+                <button class="btn" onclick="resetAllScores()" style="margin-left: 10px; background: rgba(220, 20, 60, 0.8);">Reset complet</button>
+            `;
+            
+            document.body.appendChild(victoryMessage);
+            
+            // Supprime le message après clic sur un bouton
+            victoryMessage.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    document.body.removeChild(victoryMessage);
+                }
+            });
+            
+            // Met à jour l'affichage
+            const playerDisplay = document.getElementById('currentPlayerDisplay');
+            playerDisplay.textContent = `🏆 ${winnerName} gagne !`;
+            playerDisplay.style.color = 'var(--rouge-teranga)';
+        }
+        
+        // ====== CONTRÔLES ======
+        
+        /**
+         * Passe à la partie suivante (conserve les scores)
+         */
+        function nextGame() {
+            // Supprime le message de victoire s'il existe
+            const victoryMessage = document.querySelector('.victory-message');
+            if (victoryMessage) {
+                document.body.removeChild(victoryMessage);
+            }
+            
+            // Incrémente le numéro de partie
+            matchNumber++;
+            
+            // Remet à zéro les variables de jeu
+            board = Array(9).fill(null);
+            currentPlayer = 1;
+            phase = 1;
+            piecesPlaced = 0;
+            selectedPosition = -1;
+            draggedPiece = null;
+            draggedFromPosition = -1;
+            isAIThinking = false;
+            gameEnded = false;
+            
+            // Cache l'indicateur IA s'il est affiché
+            hideAIThinking();
+            
+            // Remet à zéro l'affichage
+            const intersections = document.querySelectorAll('.intersection');
+            intersections.forEach(intersection => {
+                intersection.style.background = '';
+                intersection.style.border = '';
+            });
+            
+            const playerDisplay = document.getElementById('currentPlayerDisplay');
+            playerDisplay.style.color = '';
+            
+            // Supprime les animations des scores
+            document.querySelectorAll('.score-section').forEach(section => {
+                section.classList.remove('winner', 'current-turn');
+            });
+            
+            // Met à jour l'affichage
+            renderBoard();
+            updateDisplay();
+            updateScores();
+        }
+        
+        /**
+         * Reset complet : remet à zéro les scores et recommence
+         */
+        function resetAllScores() {
+            // Supprime le message de victoire s'il existe
+            const victoryMessage = document.querySelector('.victory-message');
+            if (victoryMessage) {
+                document.body.removeChild(victoryMessage);
+            }
+            
+            // Reset complet
+            player1Score = 0;
+            player2Score = 0;
+            matchNumber = 1;
+            
+            // Remet à zéro les variables de jeu
+            board = Array(9).fill(null);
+            currentPlayer = 1;
+            phase = 1;
+            piecesPlaced = 0;
+            selectedPosition = -1;
+            draggedPiece = null;
+            draggedFromPosition = -1;
+            isAIThinking = false;
+            gameEnded = false;
+            
+            // Cache l'indicateur IA s'il est affiché
+            hideAIThinking();
+            
+            // Remet à zéro l'affichage
+            const intersections = document.querySelectorAll('.intersection');
+            intersections.forEach(intersection => {
+                intersection.style.background = '';
+                intersection.style.border = '';
+            });
+            
+            const playerDisplay = document.getElementById('currentPlayerDisplay');
+            playerDisplay.style.color = '';
+            
+            // Supprime les animations des scores
+            document.querySelectorAll('.score-section').forEach(section => {
+                section.classList.remove('winner', 'current-turn');
+            });
+            
+            // Met à jour l'affichage
+            renderBoard();
+            updateDisplay();
+            updateScores();
+        }
+        
+        // ====== DÉMARRAGE ======
+        
+        // Initialise le jeu au chargement de la page
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
