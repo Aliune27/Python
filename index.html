@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foflet - Jeu Traditionnel Sénégalais</title>
+    <meta name="description" content="Foflet : jeu traditionnel sénégalais revisité en ligne. Jouez contre un ami ou l'IA, testez vos stratégies !">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23DAA520'/></svg>">
+    <style>
+        /* ... existing code ... */
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, var(--beige-sable) 0%, var(--terre-cuite) 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            /* Motif discret inspiré du wax */
+            background-image: 
+                radial-gradient(circle at 20px 20px, var(--or-chaud) 1px, transparent 1px),
+                radial-gradient(circle at 80px 80px, var(--vert-profond) 1px, transparent 1px);
+            background-size: 100px 100px;
+            /* background-opacity: 0.1; */
+            opacity: 1;
+        }
+        /* ... existing code ... */
+        .intersection:focus {
+            outline: 3px solid var(--or-chaud);
+            z-index: 2;
+        }
+        .score-section.current-turn {
+            box-shadow: 0 0 10px 2px var(--or-chaud);
+            border: 2px solid var(--or-chaud);
+        }
+        .score-section.winner {
+            background: var(--or-chaud);
+            color: var(--bleu-nuit);
+            transition: background 0.5s;
+        }
+        /* ... existing code ... */
+    </style>
+</head>
+<body>
+    <!-- En-tête -->
+    <header class="header">
+        <h1>🎯 Foflet</h1>
+        <p>Jeu traditionnel sénégalais</p>
+    </header>
+    <main>
+    <!-- Container principal du jeu -->
+    <div class="game-container">
+        <!-- Tableau des scores -->
+        <div class="scoreboard" id="scoreboard">
+            <div class="score-section" id="player1Score">
+                <div class="player-name" id="player1Name">Joueur 1</div>
+                <div class="player-symbol player1-symbol">●</div>
+                <div class="score-value">0</div>
+            </div>
+            <div class="score-divider"></div>
+            <div class="score-section" id="player2Score">
+                <div class="player-name" id="player2Name">Joueur 2</div>
+                <div class="player-symbol player2-symbol">■</div>
+                <div class="score-value">0</div>
+            </div>
+        </div>
+        <!-- Compteur de parties -->
+        <div class="match-counter">
+            <div class="counter-label">Partie n°</div>
+            <div class="counter-value" id="matchCounter">1</div>
+        </div>
+        <!-- Zone de statut -->
+        <div class="status-area" aria-live="polite">
+            <div class="current-player" id="currentPlayerDisplay">
+                Tour du Joueur 1 (●)
+            </div>
+            <div class="phase-info" id="phaseInfo">
+                Phase 1 : Placez vos pions
+            </div>
+        </div>
+        <!-- Plateau de jeu -->
+        <div class="game-board" id="gameBoard">
+            <!-- Lignes de la grille -->
+            <div class="grid-lines">
+                <div class="line horizontal h1"></div>
+                <div class="line horizontal h2"></div>
+                <div class="line horizontal h3"></div>
+                <div class="line vertical v1"></div>
+                <div class="line vertical v2"></div>
+                <div class="line vertical v3"></div>
+                <div class="line diagonal d1"></div>
+                <div class="line diagonal d2"></div>
+            </div>
+            <!-- Intersections (générées dynamiquement) -->
+        </div>
+        <!-- Contrôles -->
+        <div class="controls">
+            <button class="btn" id="resetBtn" onclick="nextGame()" scrollIntoView() style="background: linear-gradient(135deg, var(--or-chaud), var(--terre-cuite));">
+                ⏭️ Partie suivante
+            </button>
+            <button class="btn" onclick="resetAllScores()" id="resetButton" style="margin-left: 10px; background: linear-gradient(135deg, var(--rouge-teranga), #B22222);">
+                🔄 Reset complet
+            </button>
+            <button class="btn" id="changeModeBtn" onclick="showGameModeSelector()" style="margin-top: 15px; background: linear-gradient(135deg, var(--bleu-nuit), var(--vert-profond));">
+                🕹️ Mode de jeu
+            </button>
+        </div>
+        <div class="gameMode" id="gameModeSelector" style="display: none;">
+            <div class="mode-title">Sélectionnez le mode de jeu :</div>
+            <div class="mode-buttons">
+                <button class="mode-btn active" onclick="setGameMode('pvp', event); hideGameModeSelector();">Joueur vs Joueur</button>
+                <button class="mode-btn" onclick="setGameMode('easy', event); hideGameModeSelector();">IA Facile</button>
+                <button class="mode-btn" onclick="setGameMode('medium', event); hideGameModeSelector();">IA Difficile</button>
+                <button class="mode-btn" onclick="setGameMode('hard', event); hideGameModeSelector();">IA Expert</button>
+            </div>
+        </div>
+    </div>
+    </main>
+    <script>
+        // ====== VARIABLES GLOBALES ======
+        // ... existing code ...
+        // ====== INITIALISATION ======
+        function initGame() {
+            createIntersections();
+            renderBoard();
+            updateDisplay();
+        }
+        /** Affiche le sélecteur de mode de jeu */
+        function showGameModeSelector() {
+            const gameModeSelector = document.getElementById('gameModeSelector');
+            gameModeSelector.style.display = 'block';
+        }
+        /** Masque le sélecteur de mode de jeu */
+        function hideGameModeSelector() {
+            const gameModeSelector = document.getElementById('gameModeSelector');
+            gameModeSelector.style.display = 'none';
+        }
+        /**
+         * Crée les intersections sur le plateau
+         */
+        function createIntersections() {
+            const gameBoard = document.getElementById('gameBoard');
+            // Supprime les intersections existantes
+            gameBoard.querySelectorAll('.intersection').forEach(e => e.remove());
+            // Crée 9 intersections
+            for (let i = 0; i < 9; i++) {
+                const intersection = document.createElement('div');
+                intersection.className = `intersection pos-${i}`;
+                intersection.setAttribute('data-position', i);
+                intersection.setAttribute('role', 'button');
+                intersection.setAttribute('aria-label', `Intersection ${i + 1}`);
+                intersection.setAttribute('tabindex', '0');
+                // Gestionnaire de clic
+                intersection.addEventListener('click', handleClick);
+                // Gestion clavier
+                intersection.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        handleClick({ currentTarget: intersection });
+                    }
+                });
+                gameBoard.appendChild(intersection);
+            }
+        }
+        // ... existing code ...
+        /**
+         * Change le mode de jeu
+         * @param {string} mode - Mode sélectionné ('pvp', 'easy', 'medium', 'hard')
+         * @param {Event} event - L'événement du bouton (optionnel)
+         */
+        function setGameMode(mode, event) {
+            gameMode = mode;
+            // Met à jour l'interface
+            if (event) {
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+            }
+            // Met à jour les noms dans le scoreboard
+            const player2Name = document.getElementById('player2Name');
+            if (mode === 'pvp') {
+                player2Name.textContent = 'Joueur 2';
+            } else {
+                const difficultyNames = {
+                    'easy': 'IA Facile',
+                    'medium': 'IA Difficile', 
+                    'hard': 'IA Expert'
+                };
+                player2Name.textContent = difficultyNames[mode];
+            }
+            // Redémarre la partie
+            resetAllScores();
+        }
+        // ... existing code ...
+        /**
+         * Fait jouer l'IA selon le niveau de difficulté
+         */
+        function makeAIMove() {
+            if (gameEnded || currentPlayer !== 2 || gameMode === 'pvp') return;
+            showAIThinking();
+            // Délai pour simuler la réflexion
+            const thinkingTime = gameMode === 'easy' ? 500 : gameMode === 'medium' ? 1000 : 1500;
+            setTimeout(() => {
+                let move;
+                switch (gameMode) {
+                    case 'easy':
+                        move = getEasyAIMove();
+                        break;
+                    case 'medium':
+                        move = getMediumAIMove();
+                        break;
+                    case 'hard':
+                        move = getHardAIMove();
+                        break;
+                }
+                if (move) {
+                    if (phase === 1) {
+                        // Placement
+                        handlePlacement(move.position);
+                    } else {
+                        // Déplacement
+                        movePiece(move.from, move.to);
+                    }
+                }
+                hideAIThinking();
+            }, thinkingTime);
+        }
+        // ... existing code ...
+        /**
+         * Trouve un mouvement gagnant pour un joueur
+         * @param {number} player - Joueur (1 ou 2)
+         */
+        function findWinningMove(player) {
+            if (phase === 1) {
+                // Phase 1: teste chaque position libre
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        board[i] = player;
+                        if (checkWinForPlayer(player)) {
+                            board[i] = null;
+                            return { position: i };
+                        }
+                        board[i] = null;
+                    }
+                }
+            } else {
+                // Phase 2: teste chaque déplacement possible
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === player) {
+                        for (let adjacent of adjacencies[i]) {
+                            if (board[adjacent] === null) {
+                                // Simule le mouvement
+                                board[adjacent] = player;
+                                board[i] = null;
+                                if (checkWinForPlayer(player)) {
+                                    // Annule la simulation
+                                    board[i] = player;
+                                    board[adjacent] = null;
+                                    return { from: i, to: adjacent };
+                                }
+                                // Annule la simulation
+                                board[i] = player;
+                                board[adjacent] = null;
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+        // ... existing code ...
+        /**
+         * Vérifie s'il y a une ligne gagnante
+         * @returns {boolean} - True si victoire
+         */
+        function checkWin() {
+            for (let line of winningLines) {
+                const [a, b, c] = line;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    highlightWinningLine(line);
+                    return true;
+                }
+            }
+            return false;
+        }
+        /**
+         * Vérifie s'il y a égalité (plateau plein sans gagnant)
+         */
+        function checkDraw() {
+            return board.every(cell => cell !== null) && !checkWin();
+        }
+        /**
+         * Affiche le message d'égalité
+         */
+        function showDraw() {
+            gameEnded = true;
+            const drawMessage = document.createElement('div');
+            drawMessage.className = 'victory-message';
+            drawMessage.innerHTML = `
+                <h2>🤝 Match nul !</h2>
+                <p>La partie n°${matchNumber} se termine sans vainqueur.</p>
+                <br>
+                <button class="btn" onclick="nextGame()">Partie suivante</button>
+                <button class="btn" onclick="resetAllScores()" style="margin-left: 10px; background: rgba(220, 20, 60, 0.8);">Reset complet</button>
+            `;
+            document.body.appendChild(drawMessage);
+            drawMessage.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    document.body.removeChild(drawMessage);
+                }
+            });
+            const playerDisplay = document.getElementById('currentPlayerDisplay');
+            playerDisplay.textContent = `🤝 Match nul !`;
+            playerDisplay.style.color = 'var(--or-chaud)';
+        }
+        // ... existing code ...
+        /**
+         * Gère le placement des pions en phase 1
+         * @param {number} position - Position cliquée
+         */
+        function handlePlacement(position) {
+            // Vérifie que la position est libre
+            if (board[position] !== null) return;
+            // Place le pion
+            board[position] = currentPlayer;
+            piecesPlaced++;
+            // Met à jour l'affichage
+            renderBoard();
+            // Vérifie la victoire
+            if (checkWin()) {
+                showVictory();
+                return;
+            }
+            // Vérifie l'égalité
+            if (checkDraw()) {
+                showDraw();
+                return;
+            }
+            // Passe au joueur suivant
+            switchPlayer();
+            // Si tous les pions sont placés, passe à la phase 2
+            if (piecesPlaced === 6) {
+                startMovementPhase();
+            }
+            updateDisplay();
+            // Fait jouer l'IA si c'est son tour
+            if (gameMode !== 'pvp' && currentPlayer === 2) {
+                setTimeout(() => makeAIMove(), 300);
+            }
+        }
+        /**
+         * Déplace un pion d'une position à une autre
+         * @param {number} from - Position d'origine
+         * @param {number} to - Position de destination
+         */
+        function movePiece(from, to) {
+            // Effectue le déplacement
+            board[to] = board[from];
+            board[from] = null;
+            selectedPosition = -1;
+            // Animation du déplacement
+            const piece = document.querySelector(`.pos-${to} .piece`);
+            if (piece) {
+                piece.classList.add('moving');
+                setTimeout(() => piece.classList.remove('moving'), 600);
+            }
+            // Met à jour l'affichage
+            renderBoard();
+            // Vérifie la victoire
+            if (checkWin()) {
+                showVictory();
+                return;
+            }
+            // Vérifie l'égalité
+            if (checkDraw()) {
+                showDraw();
+                return;
+            }
+            // Passe au joueur suivant
+            switchPlayer();
+            updateDisplay();
+            // Fait jouer l'IA si c'est son tour
+            if (gameMode !== 'pvp' && currentPlayer === 2) {
+                setTimeout(() => makeAIMove(), 300);
+            }
+        }
+        // ... existing code ...
+        // Ajout : Changement de nom des joueurs (bonus UX)
+        document.getElementById('player1Name').addEventListener('dblclick', function() {
+            const newName = prompt('Nouveau nom pour Joueur 1 :', this.textContent);
+            if (newName) this.textContent = newName;
+        });
+        document.getElementById('player2Name').addEventListener('dblclick', function() {
+            const newName = prompt('Nouveau nom pour Joueur 2/IA :', this.textContent);
+            if (newName) this.textContent = newName;
+        });
+        // ====== DÉMARRAGE ======
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
